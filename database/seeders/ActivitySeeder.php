@@ -13,8 +13,8 @@ class ActivitySeeder extends Seeder
 {
     public function run(): void
     {
-        $admin   = User::where('email', 'admin@charity.mr')->first();
-        $manager = User::where('email', 'manager@charity.mr')->first();
+        $admin   = User::where('phone', '36363833')->first();
+        $manager = User::where('phone', '36064707')->first() ?? $admin;
 
         $orphans  = Orphan::where('is_active', true)->get();
         $families = Family::where('is_active', true)->get();
