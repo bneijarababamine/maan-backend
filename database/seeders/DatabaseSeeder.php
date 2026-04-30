@@ -11,20 +11,22 @@ class DatabaseSeeder extends Seeder
     {
         // Utilisateurs
         User::updateOrCreate(
-            ['email' => 'admin@charity.mr'],
+            ['phone' => '36363833'],
             [
                 'name'      => 'Admin',
-                'password'  => bcrypt('password123'),
+                'email'     => null,
+                'password'  => bcrypt('121314'),
                 'role'      => 'admin',
                 'is_active' => true,
             ]
         );
 
         User::updateOrCreate(
-            ['email' => 'manager@charity.mr'],
+            ['phone' => '36064707'],
             [
                 'name'      => 'Manager',
-                'password'  => bcrypt('password123'),
+                'email'     => null,
+                'password'  => bcrypt('360600'),
                 'role'      => 'manager',
                 'is_active' => true,
             ]
@@ -41,7 +43,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->command->info('');
-        $this->command->info('✓ Utilisateurs  : admin@charity.mr / manager@charity.mr (password123)');
+        $this->command->info('✓ Utilisateurs  : 36363833 / 36064707');
         $this->command->info('✓ Membres       : 15 membres créés');
         $this->command->info('✓ Donateurs     : 12 donateurs créés');
         $this->command->info('✓ Dons          : 20 dons créés');

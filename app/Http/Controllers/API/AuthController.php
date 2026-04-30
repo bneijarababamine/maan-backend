@@ -14,19 +14,18 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email'    => 'required|email',
+            'phone'    => 'required|string',
             'password' => 'required|string',
         ], [
-            'email.required'    => 'L\'email est obligatoire.',
-            'email.email'       => 'L\'email doit être valide.',
+            'phone.required'    => 'Le numéro de téléphone est obligatoire.',
             'password.required' => 'Le mot de passe est obligatoire.',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('phone', $request->phone)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Identifiants incorrects.'],
+                'phone' => ['Identifiants incorrects.'],
             ]);
         }
 
