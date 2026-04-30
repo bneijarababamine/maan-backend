@@ -43,13 +43,19 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Non authentifié. Veuillez vous connecter.',
+                'data'    => null,
+            ], 401);
+        });
+
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException $e, Request $request) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'Non authentifié. Veuillez vous connecter.',
-                    'data'    => null,
-                ], 401);
-            }
+            return response()->json([
+                'status'  => false,
+                'message' => 'Non authentifié. Veuillez vous connecter.',
+                'data'    => null,
+            ], 401);
         });
     })->create();
