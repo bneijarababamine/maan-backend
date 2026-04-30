@@ -71,7 +71,7 @@ class RealMemberSeeder extends Seeder
                     'full_name'      => $data['full_name'],
                     'gender'         => $data['gender'],
                     'phone'          => $data['phone'],
-                    'whatsapp'       => null,
+                    'whatsapp'       => $data['phone'],
                     'address'        => 'Nouakchott',
                     'profession'     => null,
                     'join_date'      => '2026-04-30',
