@@ -35,8 +35,12 @@ class DatabaseSeeder extends Seeder
         // Banques
         $this->call([BankSeeder::class]);
 
+        // Adhérents réels
+        $this->call([RealMemberSeeder::class]);
+
         $this->command->info('');
         $this->command->info('✓ Utilisateurs  : 36363833 / 36064707');
         $this->command->info('✓ Banques       : Cash, Bankily, Sadad, Masrafi (solde 0)');
+        $this->command->info('✓ Adhérents     : 52 adhérents ajoutés');
     }
 }
