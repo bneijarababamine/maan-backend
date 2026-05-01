@@ -30,12 +30,12 @@ class ActivityController extends Controller
             $query->whereYear('activity_date', $request->year);
         }
 
-        $activities = $query->orderByDesc('activity_date')->paginate(20);
+        $activities = $query->orderByDesc('activity_date')->get();
 
         return response()->json([
             'status'  => true,
             'message' => 'Liste des activités récupérée.',
-            'data'    => ActivityResource::collection($activities)->response()->getData(true),
+            'data'    => ActivityResource::collection($activities),
         ]);
     }
 

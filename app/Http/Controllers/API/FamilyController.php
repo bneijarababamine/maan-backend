@@ -26,12 +26,12 @@ class FamilyController extends Controller
             $query->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
         }
 
-        $families = $query->orderBy('head_of_family')->paginate(50);
+        $families = $query->orderBy('head_of_family')->get();
 
         return response()->json([
             'status'  => true,
             'message' => 'Liste des familles récupérée.',
-            'data'    => FamilyResource::collection($families)->response()->getData(true),
+            'data'    => FamilyResource::collection($families),
         ]);
     }
 

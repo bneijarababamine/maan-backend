@@ -31,12 +31,12 @@ class DonorController extends Controller
             $query->where('gender', $request->gender);
         }
 
-        $donors = $query->orderBy('full_name')->paginate(20);
+        $donors = $query->orderBy('full_name')->get();
 
         return response()->json([
             'status'  => true,
             'message' => 'Liste des donateurs récupérée.',
-            'data'    => DonorResource::collection($donors)->response()->getData(true),
+            'data'    => DonorResource::collection($donors),
         ]);
     }
 

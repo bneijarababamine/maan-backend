@@ -37,12 +37,12 @@ class OrphanController extends Controller
             });
         }
 
-        $orphans = $query->orderBy('full_name')->paginate(20);
+        $orphans = $query->orderBy('full_name')->get();
 
         return response()->json([
             'status'  => true,
             'message' => 'Liste des orphelins récupérée.',
-            'data'    => OrphanResource::collection($orphans)->response()->getData(true),
+            'data'    => OrphanResource::collection($orphans),
         ]);
     }
 

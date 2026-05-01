@@ -28,12 +28,12 @@ class ContributionController extends Controller
             $query->where('payment_method', $request->payment_method);
         }
 
-        $contributions = $query->orderByDesc('paid_at')->paginate(20);
+        $contributions = $query->orderByDesc('paid_at')->get();
 
         return response()->json([
             'status'  => true,
             'message' => 'Liste des cotisations récupérée.',
-            'data'    => ContributionResource::collection($contributions)->response()->getData(true),
+            'data'    => ContributionResource::collection($contributions),
         ]);
     }
 

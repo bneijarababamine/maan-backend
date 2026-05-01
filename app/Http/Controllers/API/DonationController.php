@@ -25,12 +25,12 @@ class DonationController extends Controller
             $query->where('payment_method', $request->payment_method);
         }
 
-        $donations = $query->orderByDesc('donated_at')->paginate(20);
+        $donations = $query->orderByDesc('donated_at')->get();
 
         return response()->json([
             'status'  => true,
             'message' => 'Liste des dons récupérée.',
-            'data'    => DonationResource::collection($donations)->response()->getData(true),
+            'data'    => DonationResource::collection($donations),
         ]);
     }
 

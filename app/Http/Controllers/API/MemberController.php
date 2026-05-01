@@ -89,12 +89,12 @@ class MemberController extends Controller
             }
         }
 
-        $members = $query->orderBy('full_name')->paginate(20);
+        $members = $query->orderBy('full_name')->get();
 
         return response()->json([
             'status'  => true,
             'message' => 'Liste des membres récupérée.',
-            'data'    => MemberResource::collection($members)->response()->getData(true),
+            'data'    => MemberResource::collection($members),
         ]);
     }
 
@@ -150,12 +150,12 @@ class MemberController extends Controller
         $contributions = $member->contributions()
             ->with(['months', 'registeredBy'])
             ->orderByDesc('paid_at')
-            ->paginate(20);
+            ->get();
 
         return response()->json([
             'status'  => true,
             'message' => 'Cotisations du membre récupérées.',
-            'data'    => ContributionResource::collection($contributions)->response()->getData(true),
+            'data'    => ContributionResource::collection($contributions),
         ]);
     }
 

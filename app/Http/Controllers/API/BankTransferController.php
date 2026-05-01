@@ -14,11 +14,11 @@ class BankTransferController extends Controller
     {
         $transfers = BankTransfer::with(['fromBank', 'toBank', 'creator'])
             ->orderByDesc('created_at')
-            ->paginate(50);
+            ->get();
 
         return response()->json([
             'status' => true,
-            'data'   => $transfers->through(fn($t) => [
+            'data'   => $transfers->map(fn($t) => [
                 'id'            => $t->id,
                 'from_bank'     => ['id' => $t->fromBank->id, 'name_fr' => $t->fromBank->name_fr, 'name_ar' => $t->fromBank->name_ar, 'logo' => $t->fromBank->logo],
                 'to_bank'       => ['id' => $t->toBank->id,   'name_fr' => $t->toBank->name_fr,   'name_ar' => $t->toBank->name_ar,   'logo' => $t->toBank->logo],
