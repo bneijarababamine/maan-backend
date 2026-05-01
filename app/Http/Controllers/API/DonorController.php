@@ -7,6 +7,7 @@ use App\Http\Requests\StoreDonorRequest;
 use App\Http\Resources\DonationResource;
 use App\Http\Resources\DonorResource;
 use App\Models\Donor;
+use App\Models\Member;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -42,7 +43,10 @@ class DonorController extends Controller
 
     public function store(StoreDonorRequest $request): JsonResponse
     {
-        $donor = Donor::create($request->validated());
+        $data = $request->validated();
+        $data = array_merge($data, $this->resolveMemberStatus($data['phone'] ?? null));
+
+        $donor = Donor::create($data);
 
         return response()->json([
             'status'  => true,
@@ -65,13 +69,23 @@ class DonorController extends Controller
     public function update(StoreDonorRequest $request, int $id): JsonResponse
     {
         $donor = Donor::findOrFail($id);
-        $donor->update($request->validated());
+        $data = array_merge($request->validated(), $this->resolveMemberStatus($request->validated()['phone'] ?? null));
+        $donor->update($data);
 
         return response()->json([
             'status'  => true,
             'message' => 'Donateur mis à jour.',
             'data'    => new DonorResource($donor),
         ]);
+    }
+
+    private function resolveMemberStatus(?string $phone): array
+    {
+        if (!$phone) return ['is_member' => false, 'member_id' => null];
+        $member = Member::where('phone', $phone)->first();
+        return $member
+            ? ['is_member' => true,  'member_id' => $member->id]
+            : ['is_member' => false, 'member_id' => null];
     }
 
     public function destroy(int $id): JsonResponse
