@@ -8,7 +8,7 @@ class ActivityBeneficiary extends Model
 {
     protected $fillable = [
         'activity_id', 'beneficiary_type', 'beneficiary_id',
-        'value_received', 'notes',
+        'value_received', 'notes', 'payment_method', 'screenshot_url', 'screenshot_public_id',
     ];
 
     protected $casts = ['value_received' => 'decimal:2'];

@@ -95,14 +95,17 @@ class ActivityController extends Controller
         }
 
         // Reverse bank balances
-        if ($activity->payment_method) {
-            if ($activity->payment_type === 'financial') {
-                foreach ($activity->beneficiaries as $b) {
-                    Bank::adjustByMethod($activity->payment_method, (float) $b->value_received);
+        if ($activity->payment_type === 'financial') {
+            foreach ($activity->beneficiaries as $b) {
+                if ($b->payment_method && (float) $b->value_received > 0) {
+                    Bank::adjustByMethod($b->payment_method, (float) $b->value_received);
                 }
-            } elseif ($activity->payment_type === 'in_kind' && (float) $activity->total_cost > 0) {
-                Bank::adjustByMethod($activity->payment_method, (float) $activity->total_cost);
+                if ($b->screenshot_public_id) {
+                    $cloudinary->delete($b->screenshot_public_id);
+                }
             }
+        } elseif ($activity->payment_type === 'in_kind' && $activity->payment_method && (float) $activity->total_cost > 0) {
+            Bank::adjustByMethod($activity->payment_method, (float) $activity->total_cost);
         }
 
         $activity->delete();
@@ -152,51 +155,62 @@ class ActivityController extends Controller
     public function addBeneficiaries(Request $request, int $id): JsonResponse
     {
         $request->validate([
-            'beneficiaries'                    => 'required|array|min:1',
-            'beneficiaries.*.beneficiary_type' => 'required|in:orphan,family',
-            'beneficiaries.*.beneficiary_id'   => 'required|integer',
-            'beneficiaries.*.value_received'   => 'nullable|numeric|min:0',
-            'beneficiaries.*.notes'            => 'nullable|string',
+            'beneficiary_type' => 'required|in:orphan,family',
+            'beneficiary_id'   => 'required|integer',
+            'value_received'   => 'nullable|numeric|min:0',
+            'notes'            => 'nullable|string',
+            'payment_method'   => 'nullable|string|max:50',
+            'screenshot'       => 'nullable|image|max:5120',
         ]);
 
         $activity = Activity::findOrFail($id);
+        $value    = (float) ($request->value_received ?? 0);
+        $method   = $request->payment_method;
 
-        // Pre-check total debit against bank balance
-        if ($activity->payment_type === 'financial' && $activity->payment_method) {
-            $totalDebit = collect($request->beneficiaries)->sum(fn($b) => (float) ($b['value_received'] ?? 0));
-            if ($totalDebit > 0) {
-                $check = Bank::canDeduct($activity->payment_method, $totalDebit);
-                if (!$check['ok']) {
-                    return response()->json([
-                        'status' => false,
-                        'error'  => 'insufficient_balance',
-                        'data'   => $check,
-                    ], 422);
-                }
+        // Check bank balance per beneficiary
+        if ($activity->payment_type === 'financial' && $method && $value > 0) {
+            $check = Bank::canDeduct($method, $value);
+            if (!$check['ok']) {
+                return response()->json([
+                    'status' => false,
+                    'error'  => 'insufficient_balance',
+                    'data'   => $check,
+                ], 422);
             }
         }
 
-        foreach ($request->beneficiaries as $ben) {
-            $value = $ben['value_received'] ?? 0;
+        // Upload screenshot if provided
+        $screenshotUrl       = null;
+        $screenshotPublicId  = null;
+        if ($request->hasFile('screenshot')) {
+            $uploaded           = app(CloudinaryService::class)->upload($request->file('screenshot'), 'charity/beneficiaries');
+            $screenshotUrl      = $uploaded['url'];
+            $screenshotPublicId = $uploaded['public_id'];
+        }
 
-            ActivityBeneficiary::updateOrCreate(
-                [
-                    'activity_id'      => $activity->id,
-                    'beneficiary_type' => $ben['beneficiary_type'],
-                    'beneficiary_id'   => $ben['beneficiary_id'],
-                ],
-                ['value_received' => $value, 'notes' => $ben['notes'] ?? null]
-            );
+        ActivityBeneficiary::updateOrCreate(
+            [
+                'activity_id'      => $activity->id,
+                'beneficiary_type' => $request->beneficiary_type,
+                'beneficiary_id'   => $request->beneficiary_id,
+            ],
+            [
+                'value_received'       => $value,
+                'notes'                => $request->notes,
+                'payment_method'       => $method,
+                'screenshot_url'       => $screenshotUrl,
+                'screenshot_public_id' => $screenshotPublicId,
+            ]
+        );
 
-            if ($activity->payment_type === 'financial' && $activity->payment_method && $value > 0) {
-                Bank::adjustByMethod($activity->payment_method, -(float) $value);
-            }
+        if ($activity->payment_type === 'financial' && $method && $value > 0) {
+            Bank::adjustByMethod($method, -$value);
         }
 
         $totalCost = $activity->beneficiaries()->sum('value_received');
         $activity->update(['total_cost' => $totalCost]);
 
-        return response()->json(['status' => true, 'message' => 'Bénéficiaires ajoutés.', 'data' => null]);
+        return response()->json(['status' => true, 'message' => 'Bénéficiaire ajouté.', 'data' => null]);
     }
 
     public function removeBeneficiary(int $id, int $benefId): JsonResponse
@@ -204,9 +218,13 @@ class ActivityController extends Controller
         $activity = Activity::findOrFail($id);
         $benef    = ActivityBeneficiary::where('activity_id', $id)->findOrFail($benefId);
 
-        // Credit back
-        if ($activity->payment_type === 'financial' && $activity->payment_method && $benef->value_received > 0) {
-            Bank::adjustByMethod($activity->payment_method, (float) $benef->value_received);
+        // Credit back using the beneficiary's own payment method
+        if ($activity->payment_type === 'financial' && $benef->payment_method && (float) $benef->value_received > 0) {
+            Bank::adjustByMethod($benef->payment_method, (float) $benef->value_received);
+        }
+
+        if ($benef->screenshot_public_id) {
+            app(CloudinaryService::class)->delete($benef->screenshot_public_id);
         }
 
         $benef->delete();

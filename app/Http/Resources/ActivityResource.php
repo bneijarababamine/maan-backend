@@ -35,6 +35,8 @@ class ActivityResource extends JsonResource
                         : ($b->familyEntity?->name ?? $b->familyEntity?->head_of_family ?? null),
                     'value_received'   => (float) $b->value_received,
                     'notes'            => $b->notes,
+                    'payment_method'   => $b->payment_method,
+                    'screenshot_url'   => $b->screenshot_url,
                 ])
             ),
             'items'            => $this->whenLoaded('items', fn() =>
