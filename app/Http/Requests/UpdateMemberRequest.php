@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateMemberRequest extends FormRequest
 {
@@ -12,9 +13,9 @@ class UpdateMemberRequest extends FormRequest
     {
         return [
             'full_name'      => 'sometimes|required|string|max:255',
-            'phone'          => 'sometimes|required|string|max:20',
+            'phone'          => ['sometimes', 'required', 'string', 'max:20', Rule::unique('members', 'phone')->ignore($this->route('member'))],
             'whatsapp'       => 'nullable|string|max:20',
-            'address'        => 'sometimes|required|string|max:500',
+            'address'        => 'nullable|string|max:500',
             'profession'     => 'nullable|string|max:255',
             'join_date'      => 'sometimes|required|date',
             'monthly_amount' => 'nullable|numeric|min:0',

@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreOrphanRequest extends FormRequest
 {
@@ -17,7 +18,7 @@ class StoreOrphanRequest extends FormRequest
             'school_name'    => 'nullable|string|max:255',
             'grade'          => 'nullable|string|max:100',
             'guardian_name'  => 'required|string|max:255',
-            'guardian_phone' => 'required|string|max:20',
+            'guardian_phone' => ['required', 'string', 'max:20', Rule::unique('orphans', 'guardian_phone')->ignore($this->route('orphan'))],
             'address'        => 'required|string|max:500',
             'photo'          => 'nullable|image|max:5120',
             'notes'          => 'nullable|string',
@@ -34,6 +35,7 @@ class StoreOrphanRequest extends FormRequest
             'gender.in'               => 'Le genre doit être male ou female.',
             'guardian_name.required'  => 'Le nom du tuteur est obligatoire.',
             'guardian_phone.required' => 'Le téléphone du tuteur est obligatoire.',
+            'guardian_phone.unique'   => 'Ce numéro de téléphone est déjà utilisé.',
             'address.required'        => 'L\'adresse est obligatoire.',
         ];
     }
