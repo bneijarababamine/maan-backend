@@ -24,8 +24,16 @@ class ContributionController extends Controller
             $query->where('member_id', $request->member_id);
         }
 
-        if ($request->has('payment_method')) {
+        if ($request->filled('payment_method')) {
             $query->where('payment_method', $request->payment_method);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('member', fn($q) =>
+                $q->where('full_name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+            );
         }
 
         $contributions = $query->orderByDesc('paid_at')->get();
