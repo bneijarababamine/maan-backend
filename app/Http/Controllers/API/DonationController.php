@@ -121,6 +121,19 @@ class DonationController extends Controller
     {
         $donation = Donation::findOrFail($id);
 
+        $check = Bank::canDeduct($donation->payment_method, (float) $donation->amount);
+        if (!$check['ok']) {
+            return response()->json([
+                'status'    => false,
+                'message'   => 'Solde insuffisant.',
+                'error'     => 'insufficient_balance',
+                'bank_fr'   => $check['bank_fr'],
+                'bank_ar'   => $check['bank_ar'],
+                'available' => $check['available'],
+                'required'  => $check['required'],
+            ], 422);
+        }
+
         Bank::adjustByMethod($donation->payment_method, -(float) $donation->amount);
 
         foreach ($donation->screenshots ?? [] as $s) {

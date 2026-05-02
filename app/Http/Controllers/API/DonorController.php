@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDonorRequest;
 use App\Http\Resources\DonationResource;
 use App\Http\Resources\DonorResource;
+use App\Models\Bank;
 use App\Models\Donor;
 use App\Models\Member;
 use Illuminate\Http\JsonResponse;
@@ -90,7 +91,29 @@ class DonorController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        Donor::findOrFail($id)->delete();
+        $donor = Donor::findOrFail($id);
+
+        $totals = $donor->donations()
+            ->selectRaw('payment_method, SUM(amount) as total')
+            ->groupBy('payment_method')
+            ->get();
+
+        foreach ($totals as $row) {
+            $check = Bank::canDeduct($row->payment_method, (float) $row->total);
+            if (!$check['ok']) {
+                return response()->json([
+                    'status'    => false,
+                    'message'   => 'Solde insuffisant.',
+                    'error'     => 'insufficient_balance',
+                    'bank_fr'   => $check['bank_fr'],
+                    'bank_ar'   => $check['bank_ar'],
+                    'available' => $check['available'],
+                    'required'  => $check['required'],
+                ], 422);
+            }
+        }
+
+        $donor->delete();
 
         return response()->json([
             'status'  => true,
