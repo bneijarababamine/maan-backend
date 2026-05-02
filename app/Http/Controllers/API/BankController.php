@@ -33,7 +33,7 @@ class BankController extends Controller
         ]);
 
         if ($request->hasFile('logo')) {
-            $uploaded = app(CloudinaryService::class)->upload($request->file('logo')->getPathname(), 'banks');
+            $uploaded = app(CloudinaryService::class)->upload($request->file('logo'), 'banks');
             $data['logo']           = $uploaded['url'];
             $data['logo_public_id'] = $uploaded['public_id'];
         } else {
@@ -65,7 +65,7 @@ class BankController extends Controller
             if ($bank->logo_public_id) {
                 app(CloudinaryService::class)->delete($bank->logo_public_id);
             }
-            $uploaded = app(CloudinaryService::class)->upload($request->file('logo')->getPathname(), 'banks');
+            $uploaded = app(CloudinaryService::class)->upload($request->file('logo'), 'banks');
             $data['logo']           = $uploaded['url'];
             $data['logo_public_id'] = $uploaded['public_id'];
         } else {
