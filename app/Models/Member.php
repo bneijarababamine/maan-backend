@@ -2,10 +2,35 @@
 
 namespace App\Models;
 
+use App\Services\CloudinaryService;
 use Illuminate\Database\Eloquent\Model;
 
 class Member extends Model
 {
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::deleting(function (Member $member) {
+            $cloudinary = app(CloudinaryService::class);
+
+            foreach ($member->contributions()->with('months')->get() as $contribution) {
+                // Reverse bank balance
+                Bank::adjustByMethod($contribution->payment_method, -(float) $contribution->total_amount);
+
+                // Delete Cloudinary screenshots
+                foreach ($contribution->screenshots ?? [] as $s) {
+                    if (!empty($s['public_id'])) {
+                        $cloudinary->delete($s['public_id']);
+                    }
+                }
+                if (empty($contribution->screenshots) && $contribution->screenshot_public_id) {
+                    $cloudinary->delete($contribution->screenshot_public_id);
+                }
+            }
+        });
+    }
+
     protected $fillable = [
         'full_name', 'gender', 'phone', 'whatsapp', 'address',
         'profession', 'join_date', 'monthly_amount', 'is_active', 'notes',
