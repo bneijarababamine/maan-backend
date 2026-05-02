@@ -7,6 +7,7 @@ use App\Http\Requests\StoreMemberRequest;
 use App\Http\Requests\UpdateMemberRequest;
 use App\Http\Resources\ContributionResource;
 use App\Http\Resources\MemberResource;
+use App\Models\Bank;
 use App\Models\ContributionMonth;
 use App\Models\Member;
 use Illuminate\Http\JsonResponse;
@@ -135,6 +136,27 @@ class MemberController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $member = Member::findOrFail($id);
+
+        $totals = $member->contributions()
+            ->selectRaw('payment_method, SUM(total_amount) as total')
+            ->groupBy('payment_method')
+            ->get();
+
+        foreach ($totals as $row) {
+            $check = Bank::canDeduct($row->payment_method, (float) $row->total);
+            if (!$check['ok']) {
+                return response()->json([
+                    'status'    => false,
+                    'message'   => 'Solde insuffisant.',
+                    'error'     => 'insufficient_balance',
+                    'bank_fr'   => $check['bank_fr'],
+                    'bank_ar'   => $check['bank_ar'],
+                    'available' => $check['available'],
+                    'required'  => $check['required'],
+                ], 422);
+            }
+        }
+
         $member->delete();
 
         return response()->json([
