@@ -15,7 +15,7 @@ class OrphanController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Orphan::query();
+        $query = Orphan::with('guardian');
 
         match ($request->status) {
             'active'     => $query->where('is_active', true),
@@ -33,7 +33,9 @@ class OrphanController extends Controller
         if ($request->has('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('full_name', 'like', "%{$request->search}%")
-                  ->orWhere('guardian_name', 'like', "%{$request->search}%");
+                  ->orWhereHas('guardian', function ($guardianQuery) use ($request) {
+                      $guardianQuery->where('name', 'like', "%{$request->search}%");
+                  });
             });
         }
 
@@ -49,9 +51,11 @@ class OrphanController extends Controller
     public function store(StoreOrphanRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $data['birth_date'] = $data['birth_year'] . '-12-31';
+        unset($data['birth_year']);
 
         if ($request->hasFile('photo')) {
-            $uploaded           = app(CloudinaryService::class)->upload(
+            $uploaded                = app(CloudinaryService::class)->upload(
                 $request->file('photo'), 'charity/orphans'
             );
             $data['photo_url']       = $uploaded['url'];
@@ -59,6 +63,7 @@ class OrphanController extends Controller
         }
 
         $orphan = Orphan::create($data);
+        $orphan->load('guardian');
 
         return response()->json([
             'status'  => true,
@@ -69,7 +74,7 @@ class OrphanController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $orphan = Orphan::with('siblings')->findOrFail($id);
+        $orphan = Orphan::with(['siblings', 'guardian'])->findOrFail($id);
 
         return response()->json([
             'status'  => true,
@@ -82,12 +87,14 @@ class OrphanController extends Controller
     {
         $orphan = Orphan::findOrFail($id);
         $data   = $request->validated();
+        $data['birth_date'] = $data['birth_year'] . '-12-31';
+        unset($data['birth_year']);
 
         if ($request->hasFile('photo')) {
             if ($orphan->photo_public_id) {
                 app(CloudinaryService::class)->delete($orphan->photo_public_id);
             }
-            $uploaded               = app(CloudinaryService::class)->upload(
+            $uploaded                = app(CloudinaryService::class)->upload(
                 $request->file('photo'), 'charity/orphans'
             );
             $data['photo_url']       = $uploaded['url'];
@@ -95,6 +102,7 @@ class OrphanController extends Controller
         }
 
         $orphan->update($data);
+        $orphan->load('guardian');
 
         return response()->json([
             'status'  => true,
@@ -166,7 +174,9 @@ class OrphanController extends Controller
 
         $orphan    = Orphan::findOrFail($id);
         $siblingId = $request->sibling_id;
+        $newSibling = Orphan::findOrFail($siblingId);
 
+        // Vérifier si le lien existe déjà
         if ($orphan->siblings()->where('sibling_id', $siblingId)->exists()) {
             return response()->json([
                 'status'  => false,
@@ -175,12 +185,28 @@ class OrphanController extends Controller
             ], 422);
         }
 
+        // Récupérer tous les frères/sœurs actuels de l'orphelin principal
+        $existingSiblings = $orphan->siblings()->pluck('sibling_id')->toArray();
+        
+        // Créer une relation complète et transitive
+        // 1. Ajouter le nouveau frère/sœur à l'orphelin principal
         $orphan->siblings()->attach($siblingId);
-        Orphan::find($siblingId)->siblings()->syncWithoutDetaching([$id]);
+        
+        // 2. Ajouter l'orphelin principal au nouveau frère/sœur
+        $newSibling->siblings()->syncWithoutDetaching([$id]);
+        
+        // 3. Créer les relations entre le nouveau frère/sœur et tous les frères/sœurs existants
+        foreach ($existingSiblings as $existingSiblingId) {
+            // Lier le nouveau frère au frère existant
+            $newSibling->siblings()->syncWithoutDetaching([$existingSiblingId]);
+            
+            // Lier le frère existant au nouveau frère
+            Orphan::find($existingSiblingId)->siblings()->syncWithoutDetaching([$siblingId]);
+        }
 
         return response()->json([
             'status'  => true,
-            'message' => 'Lien de fratrie ajouté.',
+            'message' => 'Lien de fratrie ajouté avec succès à toute la fratrie.',
             'data'    => null,
         ]);
     }

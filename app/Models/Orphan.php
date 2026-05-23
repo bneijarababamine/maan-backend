@@ -8,7 +8,7 @@ class Orphan extends Model
 {
     protected $fillable = [
         'full_name', 'birth_date', 'gender', 'school_name', 'grade',
-        'guardian_name', 'guardian_phone', 'address',
+        'guardian_id', 'address',
         'photo_url', 'photo_public_id', 'is_active',
         'deactivated_reason', 'deactivated_at', 'notes',
     ];
@@ -21,18 +21,46 @@ class Orphan extends Model
 
     public function getAgeAttribute(): int
     {
-        return $this->birth_date->age;
+        return (int) $this->birth_date->copy()->endOfYear()->diffInYears(now());
+    }
+
+    public function getBirthYearAttribute(): int
+    {
+        return (int) $this->birth_date->format('Y');
     }
 
     public function getIsAdultAttribute(): bool
     {
-        return $this->birth_date->age >= 18;
+        return $this->age >= 18;
     }
 
     public function getMonthsUntil18Attribute(): ?int
     {
         if ($this->is_adult) return null;
-        return (int) now()->diffInMonths($this->birth_date->copy()->addYears(18));
+        $turns18 = $this->birth_date->copy()->endOfYear()->addYears(18);
+        return (int) now()->diffInMonths($turns18);
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        $connector  = $this->gender === 'male' ? 'ould' : 'mint';
+        $fatherName = $this->guardian?->father_name ?? '';
+        return trim($this->full_name . ($fatherName ? " {$connector} {$fatherName}" : ''));
+    }
+
+    public function guardian()
+    {
+        return $this->belongsTo(Guardian::class);
+    }
+
+    public function getGuardianNameAttribute(): ?string
+    {
+        return $this->guardian?->name;
+    }
+
+    public function getGuardianPhoneAttribute(): ?string
+    {
+        return $this->guardian?->phone;
     }
 
     public function siblings()

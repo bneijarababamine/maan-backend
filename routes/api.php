@@ -7,8 +7,10 @@ use App\Http\Controllers\API\BankTransferController;
 use App\Http\Controllers\API\ContributionController;
 use App\Http\Controllers\API\DashboardController;
 use App\Http\Controllers\API\DonationController;
+use App\Http\Controllers\API\DonationTypeController;
 use App\Http\Controllers\API\DonorController;
 use App\Http\Controllers\API\FamilyController;
+use App\Http\Controllers\API\GuardianController;
 use App\Http\Controllers\API\MemberController;
 use App\Http\Controllers\API\OrphanController;
 use App\Http\Controllers\API\SettingsController;
@@ -44,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Donations
     Route::apiResource('donations', DonationController::class);
+    Route::apiResource('donation-types', DonationTypeController::class)->except(['show']);
 
     // Orphans
     Route::apiResource('orphans', OrphanController::class);
@@ -52,6 +55,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('orphans/{id}/siblings', [OrphanController::class, 'addSibling']);
     Route::delete('orphans/{orphanId}/siblings/{siblingId}', [OrphanController::class, 'removeSibling']);
     Route::get('orphans/{id}/benefits', [OrphanController::class, 'benefits']);
+
+    // Guardians
+    Route::apiResource('guardians', GuardianController::class);
+    Route::post('guardians/check-phone', [GuardianController::class, 'checkByPhone']);
+    Route::get('guardians/{id}/orphans', [GuardianController::class, 'orphans']);
 
     // Families
     Route::apiResource('families', FamilyController::class);

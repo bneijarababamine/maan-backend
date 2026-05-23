@@ -15,14 +15,19 @@ class DonationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Donation::with(['donor', 'registeredBy']);
+        $query = Donation::with(['donor', 'member', 'donationType', 'registeredBy']);
 
         if ($request->has('donor_id')) {
             $query->where('donor_id', $request->donor_id);
         }
-
         if ($request->has('payment_method')) {
             $query->where('payment_method', $request->payment_method);
+        }
+        if ($request->has('donation_type_id')) {
+            $query->where('donation_type_id', $request->donation_type_id);
+        }
+        if ($request->has('year')) {
+            $query->where('year', $request->year);
         }
 
         $donations = $query->orderByDesc('donated_at')->get();
@@ -42,7 +47,10 @@ class DonationController extends Controller
 
         $donation = Donation::create([
             'receipt_number'       => $nextReceipt,
-            'donor_id'             => $request->donor_id,
+            'donor_id'             => $request->donor_id         ?? null,
+            'member_id'            => $request->member_id        ?? null,
+            'donation_type_id'     => $request->donation_type_id ?? null,
+            'year'                 => $request->year              ?? now()->year,
             'amount'               => $request->amount,
             'payment_method'       => $request->payment_method,
             'transaction_ref'      => $request->transaction_ref,
@@ -59,13 +67,13 @@ class DonationController extends Controller
         return response()->json([
             'status'  => true,
             'message' => 'Don enregistré avec succès.',
-            'data'    => new DonationResource($donation->load(['donor', 'registeredBy'])),
+            'data'    => new DonationResource($donation->load(['donor', 'member', 'donationType', 'registeredBy'])),
         ], 201);
     }
 
     public function show(int $id): JsonResponse
     {
-        $donation = Donation::with(['donor', 'registeredBy'])->findOrFail($id);
+        $donation = Donation::with(['donor', 'member', 'donationType', 'registeredBy'])->findOrFail($id);
 
         return response()->json([
             'status'  => true,
@@ -100,6 +108,8 @@ class DonationController extends Controller
         Bank::adjustByMethod($request->payment_method, (float) $request->amount);
 
         $donation->update([
+            'donation_type_id'     => $request->donation_type_id ?? $donation->donation_type_id,
+            'year'                 => $request->year             ?? $donation->year,
             'amount'               => $request->amount,
             'payment_method'       => $request->payment_method,
             'transaction_ref'      => $request->transaction_ref,
@@ -113,7 +123,7 @@ class DonationController extends Controller
         return response()->json([
             'status'  => true,
             'message' => 'Don mis à jour.',
-            'data'    => new DonationResource($donation->load(['donor', 'registeredBy'])),
+            'data'    => new DonationResource($donation->load(['donor', 'member', 'donationType', 'registeredBy'])),
         ]);
     }
 
