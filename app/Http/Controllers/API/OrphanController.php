@@ -7,6 +7,7 @@ use App\Http\Requests\StoreOrphanRequest;
 use App\Http\Resources\OrphanResource;
 use App\Models\ActivityBeneficiary;
 use App\Models\Orphan;
+use App\Models\Setting;
 use App\Services\CloudinaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,20 @@ class OrphanController extends Controller
                                   ->whereDate('birth_date', '<=', now()->subYears(17)->subMonths(6)),
             default      => null,
         };
+
+        if ($request->status === 'within_limit') {
+            $limitMale   = (int) (Setting::where('key', 'age_limit_male')->value('value')   ?: 18);
+            $limitFemale = (int) (Setting::where('key', 'age_limit_female')->value('value') ?: 21);
+            $query->where(function ($q) use ($limitMale, $limitFemale) {
+                $q->where(function ($sq) use ($limitMale) {
+                    $sq->where('gender', 'male')
+                       ->whereRaw('TIMESTAMPDIFF(YEAR, CONCAT(YEAR(birth_date), "-12-31"), NOW()) <= ?', [$limitMale]);
+                })->orWhere(function ($sq) use ($limitFemale) {
+                    $sq->where('gender', 'female')
+                       ->whereRaw('TIMESTAMPDIFF(YEAR, CONCAT(YEAR(birth_date), "-12-31"), NOW()) <= ?', [$limitFemale]);
+                });
+            });
+        }
 
         if ($request->has('gender')) {
             $query->where('gender', $request->gender);
