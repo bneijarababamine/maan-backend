@@ -43,8 +43,17 @@ class Orphan extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        $fatherName = $this->guardian?->father_name ?? '';
-        return trim($this->full_name . ($fatherName ? " {$fatherName}" : ''));
+        $fatherName = trim($this->guardian?->father_name ?? '');
+        $firstName  = trim($this->full_name);
+
+        if (!$fatherName) return $firstName;
+
+        // Strip any legacy suffix: "ould/mint father_name" or plain "father_name"
+        $escaped = preg_quote($fatherName, '/');
+        $cleaned = preg_replace('/\s+(ould|mint)\s+' . $escaped . '$/iu', '', $firstName);
+        $cleaned = trim(preg_replace('/\s+' . $escaped . '$/u', '', $cleaned));
+
+        return $cleaned . ' ' . $fatherName;
     }
 
     public function guardian()
