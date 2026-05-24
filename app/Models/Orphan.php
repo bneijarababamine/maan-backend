@@ -43,9 +43,8 @@ class Orphan extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        $connector  = $this->gender === 'male' ? 'ould' : 'mint';
         $fatherName = $this->guardian?->father_name ?? '';
-        return trim($this->full_name . ($fatherName ? " {$connector} {$fatherName}" : ''));
+        return trim($this->full_name . ($fatherName ? " {$fatherName}" : ''));
     }
 
     public function guardian()
