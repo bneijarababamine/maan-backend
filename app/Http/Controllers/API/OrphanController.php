@@ -18,18 +18,22 @@ class OrphanController extends Controller
     {
         $query = Orphan::with('guardian');
 
-        match ($request->status) {
-            'active'     => $query->where('is_active', true),
-            'inactive'   => $query->where('is_active', false),
-            'aged_out'   => $query->where('deactivated_reason', 'aged_out'),
-            'near_adult' => $query->where('is_active', true)
-                                  ->whereDate('birth_date', '<=', now()->subYears(17)->subMonths(6)),
-            default      => null,
-        };
+        $limitMale   = (int) (Setting::where('key', 'age_limit_male')->value('value')   ?: 18);
+        $limitFemale = (int) (Setting::where('key', 'age_limit_female')->value('value') ?: 21);
 
-        if ($request->status === 'within_limit') {
-            $limitMale   = (int) (Setting::where('key', 'age_limit_male')->value('value')   ?: 18);
-            $limitFemale = (int) (Setting::where('key', 'age_limit_female')->value('value') ?: 21);
+        if ($request->status === 'exceeded_limit') {
+            // Adults page: only orphans exceeding their gender limit
+            $query->where(function ($q) use ($limitMale, $limitFemale) {
+                $q->where(function ($sq) use ($limitMale) {
+                    $sq->where('gender', 'male')
+                       ->whereRaw('TIMESTAMPDIFF(YEAR, CONCAT(YEAR(birth_date), "-12-31"), NOW()) > ?', [$limitMale]);
+                })->orWhere(function ($sq) use ($limitFemale) {
+                    $sq->where('gender', 'female')
+                       ->whereRaw('TIMESTAMPDIFF(YEAR, CONCAT(YEAR(birth_date), "-12-31"), NOW()) > ?', [$limitFemale]);
+                });
+            });
+        } else {
+            // Orphans page: always exclude orphans exceeding their gender limit
             $query->where(function ($q) use ($limitMale, $limitFemale) {
                 $q->where(function ($sq) use ($limitMale) {
                     $sq->where('gender', 'male')
@@ -39,6 +43,14 @@ class OrphanController extends Controller
                        ->whereRaw('TIMESTAMPDIFF(YEAR, CONCAT(YEAR(birth_date), "-12-31"), NOW()) <= ?', [$limitFemale]);
                 });
             });
+
+            match ($request->status) {
+                'active'     => $query->where('is_active', true),
+                'inactive'   => $query->where('is_active', false),
+                'near_adult' => $query->where('is_active', true)
+                                      ->whereDate('birth_date', '<=', now()->subYears(17)->subMonths(6)),
+                default      => null,
+            };
         }
 
         if ($request->has('gender')) {
