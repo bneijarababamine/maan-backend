@@ -13,6 +13,7 @@ use App\Http\Controllers\API\FamilyController;
 use App\Http\Controllers\API\GuardianController;
 use App\Http\Controllers\API\MemberController;
 use App\Http\Controllers\API\OrphanController;
+use App\Http\Controllers\API\SearchController;
 use App\Http\Controllers\API\SettingsController;
 use App\Http\Controllers\API\WilayaController;
 use Illuminate\Support\Facades\Route;
@@ -89,6 +90,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('activities/{id}/beneficiaries/{benefId}', [ActivityController::class, 'removeBeneficiary']);
     Route::post('activities/{id}/items', [ActivityController::class, 'addItems']);
     Route::delete('activities/{id}/items/{itemId}', [ActivityController::class, 'removeItem']);
+
+    // Global search
+    Route::get('search', [SearchController::class, 'search']);
 
     // Bank transfers
     Route::get('bank-transfers', [BankTransferController::class, 'index']);
