@@ -27,16 +27,19 @@ class ActivityResource extends JsonResource
             ]),
             'beneficiaries'    => $this->whenLoaded('beneficiaries', fn() =>
                 $this->beneficiaries->map(fn($b) => [
-                    'id'               => $b->id,
-                    'beneficiary_type' => $b->beneficiary_type,
-                    'beneficiary_id'   => $b->beneficiary_id,
-                    'beneficiary_name' => $b->beneficiary_type === 'orphan'
-                        ? ($b->orphanEntity?->full_name ?? null)
+                    'id'                   => $b->id,
+                    'beneficiary_type'     => $b->beneficiary_type,
+                    'beneficiary_id'       => $b->beneficiary_id,
+                    'beneficiary_name'     => $b->beneficiary_type === 'orphan'
+                        ? ($b->orphanEntity?->display_name ?? $b->orphanEntity?->full_name ?? null)
                         : ($b->familyEntity?->name ?? $b->familyEntity?->head_of_family ?? null),
-                    'value_received'   => (float) $b->value_received,
-                    'notes'            => $b->notes,
-                    'payment_method'   => $b->payment_method,
-                    'screenshot_url'   => $b->screenshot_url,
+                    'guardian_id'          => $b->beneficiary_type === 'orphan' ? ($b->orphanEntity?->guardian_id ?? null) : null,
+                    'guardian_name'        => $b->beneficiary_type === 'orphan' ? ($b->orphanEntity?->guardian?->name ?? null) : null,
+                    'guardian_father_name' => $b->beneficiary_type === 'orphan' ? ($b->orphanEntity?->guardian?->father_name ?? null) : null,
+                    'value_received'       => (float) $b->value_received,
+                    'notes'                => $b->notes,
+                    'payment_method'       => $b->payment_method,
+                    'screenshot_url'       => $b->screenshot_url,
                 ])
             ),
             'items'            => $this->whenLoaded('items', fn() =>

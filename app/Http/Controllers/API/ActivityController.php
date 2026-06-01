@@ -59,7 +59,7 @@ class ActivityController extends Controller
     {
         $activity = Activity::with([
             'creator', 'photos', 'items',
-            'beneficiaries.orphanEntity', 'beneficiaries.familyEntity',
+            'beneficiaries.orphanEntity.guardian', 'beneficiaries.familyEntity',
         ])->findOrFail($id);
 
         return response()->json([
