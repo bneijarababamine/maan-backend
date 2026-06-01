@@ -50,7 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Orphans
     Route::apiResource('orphans', OrphanController::class);
-    Route::post('orphans/{id}/deactivate', [OrphanController::class, 'deactivate']);
+    Route::post('orphans/{id}/deactivate',  [OrphanController::class, 'deactivate']);
+    Route::post('orphans/{id}/reactivate', [OrphanController::class, 'reactivate']);
     Route::get('orphans/{id}/siblings', [OrphanController::class, 'siblings']);
     Route::post('orphans/{id}/siblings', [OrphanController::class, 'addSibling']);
     Route::delete('orphans/{orphanId}/siblings/{siblingId}', [OrphanController::class, 'removeSibling']);

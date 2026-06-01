@@ -146,7 +146,7 @@ class OrphanController extends Controller
     public function deactivate(Request $request, int $id): JsonResponse
     {
         $request->validate([
-            'reason' => 'required|in:manual,other',
+            'reason' => 'required|in:manual,other,aged_out',
             'notes'  => 'nullable|string',
         ]);
 
@@ -161,6 +161,22 @@ class OrphanController extends Controller
         return response()->json([
             'status'  => true,
             'message' => 'Orphelin désactivé.',
+            'data'    => new OrphanResource($orphan),
+        ]);
+    }
+
+    public function reactivate(int $id): JsonResponse
+    {
+        $orphan = Orphan::where('is_active', false)->findOrFail($id);
+        $orphan->update([
+            'is_active'          => true,
+            'deactivated_reason' => null,
+            'deactivated_at'     => null,
+        ]);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Orphelin réactivé.',
             'data'    => new OrphanResource($orphan),
         ]);
     }
