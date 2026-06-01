@@ -279,11 +279,13 @@ class OrphanController extends Controller
             ->map(fn($b) => [
                 'id'             => $b->id,
                 'activity_id'    => $b->activity_id,
-                'activity_title' => $b->activity?->title_fr ?? $b->activity?->title_ar ?? '—',
-                'activity_type'  => $b->activity?->activity_type,
-                'activity_date'  => $b->activity?->activity_date,
-                'value_received' => (float) $b->value_received,
-                'notes'          => $b->notes,
+                'activity_title_fr' => $b->activity?->title_fr,
+                'activity_title_ar' => $b->activity?->title_ar,
+                'activity_type'     => $b->activity?->activity_type,
+                'activity_date'     => $b->activity?->activity_date?->format('Y-m-d'),
+                'payment_type'      => $b->activity?->payment_type,
+                'value_received'    => (float) $b->value_received,
+                'notes'             => $b->notes,
             ]);
 
         return response()->json([
