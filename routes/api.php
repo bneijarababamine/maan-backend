@@ -13,6 +13,7 @@ use App\Http\Controllers\API\FamilyController;
 use App\Http\Controllers\API\GuardianController;
 use App\Http\Controllers\API\MemberController;
 use App\Http\Controllers\API\OrphanController;
+use App\Http\Controllers\API\ChronicPatientController;
 use App\Http\Controllers\API\SearchController;
 use App\Http\Controllers\API\SettingsController;
 use App\Http\Controllers\API\WilayaController;
@@ -90,6 +91,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('activities/{id}/beneficiaries/{benefId}', [ActivityController::class, 'removeBeneficiary']);
     Route::post('activities/{id}/items', [ActivityController::class, 'addItems']);
     Route::delete('activities/{id}/items/{itemId}', [ActivityController::class, 'removeItem']);
+
+    // Chronic patients
+    Route::get('chronic-patients', [ChronicPatientController::class, 'index']);
+    Route::post('chronic-patients', [ChronicPatientController::class, 'store']);
+    Route::get('chronic-patients/{id}', [ChronicPatientController::class, 'show']);
+    Route::put('chronic-patients/{id}', [ChronicPatientController::class, 'update']);
+    Route::delete('chronic-patients/{id}', [ChronicPatientController::class, 'destroy']);
+    Route::post('chronic-patients/{id}/medications', [ChronicPatientController::class, 'addMedication']);
+    Route::delete('chronic-patients/{id}/medications/{medId}', [ChronicPatientController::class, 'removeMedication']);
 
     // Global search
     Route::get('search', [SearchController::class, 'search']);

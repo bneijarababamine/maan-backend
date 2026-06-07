@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChronicPatient;
 use App\Models\Guardian;
 use App\Models\Orphan;
 use App\Models\Member;
@@ -211,14 +212,47 @@ class SearchController extends Controller
                 ];
             });
 
+        // ── Chronic patients ──────────────────────────────────
+        $chronicPatients = ChronicPatient::where('full_name', 'like', $like)
+            ->orWhere('phone', 'like', $like)
+            ->orWhere('disease_name', 'like', $like)
+            ->with('medications')
+            ->get()
+            ->map(function (ChronicPatient $p) {
+                $totalSpent = $p->medications->sum(fn($m) => (float) $m->price * (float) $m->quantity);
+                $medications = $p->medications->map(fn($m) => [
+                    'id'             => $m->id,
+                    'name'           => $m->name,
+                    'price'          => (float) $m->price,
+                    'quantity'       => (float) $m->quantity,
+                    'total'          => (float) $m->price * (float) $m->quantity,
+                    'payment_method' => $m->payment_method,
+                    'consumed_at'    => $m->consumed_at?->format('Y-m-d'),
+                    'image_url'      => $m->image_url,
+                ])->values();
+
+                return [
+                    'type'         => 'chronic',
+                    'id'           => $p->id,
+                    'name'         => $p->full_name,
+                    'phone'        => $p->phone,
+                    'disease_name' => $p->disease_name,
+                    'is_active'    => $p->is_active,
+                    'total_spent'  => $totalSpent,
+                    'medications'  => $medications,
+                    'activity_benefits' => [],
+                ];
+            });
+
         return response()->json([
             'status' => true,
             'data'   => [
-                'guardians' => $guardians,
-                'orphans'   => $orphans,
-                'members'   => $members,
-                'donors'    => $donors,
-                'families'  => $families,
+                'guardians'        => $guardians,
+                'orphans'          => $orphans,
+                'members'          => $members,
+                'donors'           => $donors,
+                'families'         => $families,
+                'chronic_patients' => $chronicPatients,
             ],
         ]);
     }
