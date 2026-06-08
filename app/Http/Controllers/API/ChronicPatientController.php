@@ -57,7 +57,7 @@ class ChronicPatientController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $patient = ChronicPatient::with(['medications' => fn($q) => $q->orderByDesc('consumed_at')])->findOrFail($id);
+        $patient = ChronicPatient::with(['medications' => fn($q) => $q->orderByDesc('start_date')])->findOrFail($id);
 
         $medications = $patient->medications->map(fn($m) => $this->formatMedication($m));
         $totalSpent  = $patient->medications->sum(fn($m) => (float) $m->price * (float) $m->quantity);
@@ -120,7 +120,9 @@ class ChronicPatientController extends Controller
             'price'          => 'required|numeric|min:0',
             'quantity'       => 'required|numeric|min:0.01',
             'payment_method' => 'required|string|max:50',
-            'consumed_at'    => 'required|date',
+            'start_date'     => 'required|date',
+            'duration_value' => 'required|integer|min:1',
+            'duration_unit'  => 'required|in:days,weeks,months',
             'notes'          => 'nullable|string',
             'image'          => 'nullable|image|max:5120',
         ]);
@@ -156,7 +158,9 @@ class ChronicPatientController extends Controller
             'price'          => $price,
             'quantity'       => $quantity,
             'payment_method' => $method,
-            'consumed_at'    => $request->consumed_at,
+            'start_date'     => $request->start_date,
+            'duration_value' => (int) $request->duration_value,
+            'duration_unit'  => $request->duration_unit,
             'notes'          => $request->notes,
             'image_url'      => $imageUrl,
             'image_public_id'=> $imagePublicId,
@@ -216,7 +220,11 @@ class ChronicPatientController extends Controller
             'quantity'       => (float) $m->quantity,
             'total'          => (float) $m->price * (float) $m->quantity,
             'payment_method' => $m->payment_method,
-            'consumed_at'    => $m->consumed_at?->format('Y-m-d'),
+            'start_date'     => $m->start_date?->format('Y-m-d'),
+            'duration_value' => $m->duration_value,
+            'duration_unit'  => $m->duration_unit,
+            'end_date'       => $m->end_date->format('Y-m-d'),
+            'days_remaining' => $m->days_remaining,
             'notes'          => $m->notes,
             'image_url'      => $m->image_url,
         ];
