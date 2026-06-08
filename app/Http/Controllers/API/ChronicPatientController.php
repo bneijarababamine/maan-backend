@@ -32,6 +32,10 @@ class ChronicPatientController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
+        if ($request->boolean('with_medications')) {
+            $query->with(['medications' => fn($q) => $q->orderByDesc('start_date')]);
+        }
+
         $patients = $query->orderBy('full_name')->get()->map(fn($p) => $this->formatPatient($p));
 
         return response()->json(['status' => true, 'data' => $patients]);
@@ -196,7 +200,7 @@ class ChronicPatientController extends Controller
 
     private function formatPatient(ChronicPatient $p): array
     {
-        return [
+        $data = [
             'id'           => $p->id,
             'full_name'    => $p->full_name,
             'gender'       => $p->gender,
@@ -208,6 +212,13 @@ class ChronicPatientController extends Controller
             'is_active'    => $p->is_active,
             'created_at'   => $p->created_at?->toISOString(),
         ];
+
+        if ($p->relationLoaded('medications')) {
+            $data['medications'] = $p->medications->map(fn($m) => $this->formatMedication($m));
+            $data['total_spent'] = $p->medications->sum(fn($m) => (float) $m->price * (float) $m->quantity);
+        }
+
+        return $data;
     }
 
     private function formatMedication(PatientMedication $m): array
