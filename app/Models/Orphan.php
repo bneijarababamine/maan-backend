@@ -21,7 +21,7 @@ class Orphan extends Model
 
     public function getAgeAttribute(): int
     {
-        return (int) $this->birth_date->copy()->endOfYear()->diffInYears(now());
+        return now()->year - $this->birth_year;
     }
 
     public function getBirthYearAttribute(): int
