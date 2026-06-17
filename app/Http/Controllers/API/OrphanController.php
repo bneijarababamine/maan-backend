@@ -26,10 +26,10 @@ class OrphanController extends Controller
             $query->where(function ($q) use ($limitMale, $limitFemale) {
                 $q->where(function ($sq) use ($limitMale) {
                     $sq->where('gender', 'male')
-                       ->whereRaw('TIMESTAMPDIFF(YEAR, CONCAT(YEAR(birth_date), "-12-31"), NOW()) > ?', [$limitMale]);
+                       ->whereRaw('(YEAR(NOW()) - YEAR(birth_date)) > ?', [$limitMale]);
                 })->orWhere(function ($sq) use ($limitFemale) {
                     $sq->where('gender', 'female')
-                       ->whereRaw('TIMESTAMPDIFF(YEAR, CONCAT(YEAR(birth_date), "-12-31"), NOW()) > ?', [$limitFemale]);
+                       ->whereRaw('(YEAR(NOW()) - YEAR(birth_date)) > ?', [$limitFemale]);
                 });
             });
         } else {
@@ -37,10 +37,10 @@ class OrphanController extends Controller
             $query->where(function ($q) use ($limitMale, $limitFemale) {
                 $q->where(function ($sq) use ($limitMale) {
                     $sq->where('gender', 'male')
-                       ->whereRaw('TIMESTAMPDIFF(YEAR, CONCAT(YEAR(birth_date), "-12-31"), NOW()) <= ?', [$limitMale]);
+                       ->whereRaw('(YEAR(NOW()) - YEAR(birth_date)) <= ?', [$limitMale]);
                 })->orWhere(function ($sq) use ($limitFemale) {
                     $sq->where('gender', 'female')
-                       ->whereRaw('TIMESTAMPDIFF(YEAR, CONCAT(YEAR(birth_date), "-12-31"), NOW()) <= ?', [$limitFemale]);
+                       ->whereRaw('(YEAR(NOW()) - YEAR(birth_date)) <= ?', [$limitFemale]);
                 });
             });
 
