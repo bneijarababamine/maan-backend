@@ -13,11 +13,11 @@ class DeactivateAdultOrphans extends Command
     public function handle(): int
     {
         $count = Orphan::where('is_active', true)
-            ->whereDate('birth_date', '<=', now()->subYears(18))
+            ->whereYear('birth_date', '<=', now()->year - 18)
             ->count();
 
         Orphan::where('is_active', true)
-            ->whereDate('birth_date', '<=', now()->subYears(18))
+            ->whereYear('birth_date', '<=', now()->year - 18)
             ->update([
                 'is_active'          => false,
                 'deactivated_reason' => 'aged_out',

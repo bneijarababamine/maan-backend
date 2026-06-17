@@ -34,8 +34,7 @@ class DashboardController extends Controller
         $totalOrphans   = Orphan::count();
 
         $near18Orphans = Orphan::where('is_active', true)
-            ->whereDate('birth_date', '<=', now()->subYears(17)->subMonths(6))
-            ->whereDate('birth_date', '>', now()->subYears(18))
+            ->whereYear('birth_date', '=', now()->year - 17)
             ->count();
 
         $activeFamilies = Family::where('is_active', true)->count();
@@ -101,8 +100,7 @@ class DashboardController extends Controller
     public function near18Orphans(): JsonResponse
     {
         $orphans = Orphan::where('is_active', true)
-            ->whereDate('birth_date', '<=', now()->subYears(17))
-            ->whereDate('birth_date', '>', now()->subYears(18))
+            ->whereYear('birth_date', '=', now()->year - 17)
             ->orderBy('birth_date')
             ->take(10)
             ->get()
